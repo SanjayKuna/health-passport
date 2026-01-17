@@ -1,0 +1,4 @@
+project_id = "apshryitizvyxjsmqwjf"
+
+[functions.process-medical-record]
+verify_jwt = false
