@@ -247,8 +247,9 @@ const UploadPage = () => {
                   <p className="text-muted-foreground mb-6">
                     or click to browse from your device
                   </p>
-                  <label className="cursor-pointer">
+                  <div>
                     <input
+                      id="file-upload-input"
                       type="file"
                       multiple
                       accept="image/*"
@@ -256,14 +257,22 @@ const UploadPage = () => {
                       onChange={(e) => {
                         if (e.target.files) {
                           handleFiles(Array.from(e.target.files));
+                          e.target.value = '';
                         }
                       }}
                     />
-                    <Button variant="hero" size="lg">
+                    <Button
+                      variant="hero"
+                      size="lg"
+                      type="button"
+                      onClick={() => {
+                        document.getElementById('file-upload-input')?.click();
+                      }}
+                    >
                       <FileImage className="w-5 h-5 mr-2" />
                       Select Images
                     </Button>
-                  </label>
+                  </div>
                   <p className="text-sm text-muted-foreground mt-4">
                     Supports JPG, PNG, HEIC • Max 10MB per file
                   </p>
