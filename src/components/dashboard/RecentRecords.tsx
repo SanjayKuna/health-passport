@@ -1,43 +1,49 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Pill, TestTube, Stethoscope, Clock, ArrowRight } from "lucide-react";
+import { FileText, Pill, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
-const recentRecords = [
-  {
-    id: 1,
-    type: "prescription",
-    title: "General Checkup Prescription",
-    doctor: "Dr. Sarah Johnson",
-    date: "2 days ago",
-    icon: Pill,
-    color: "text-primary",
-    bg: "bg-primary/10",
-  },
-  {
-    id: 2,
-    type: "lab",
-    title: "Blood Test Results",
-    doctor: "City Lab Center",
-    date: "1 week ago",
-    icon: TestTube,
-    color: "text-success",
-    bg: "bg-success/10",
-  },
-  {
-    id: 3,
-    type: "diagnosis",
-    title: "ENT Consultation",
-    doctor: "Dr. Michael Chen",
-    date: "2 weeks ago",
-    icon: Stethoscope,
-    color: "text-accent",
-    bg: "bg-accent/10",
-  },
-];
+interface RecentMedicine {
+  id: string;
+  name: string;
+  dosage: string;
+  prescribed_by: string | null;
+  created_at: string;
+}
 
 const RecentRecords = () => {
+  const [records, setRecords] = useState<RecentMedicine[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      const { data, error } = await supabase
+        .from("medicines")
+        .select("id, name, dosage, prescribed_by, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!error && data) {
+        setRecords(data as RecentMedicine[]);
+      }
+      setLoading(false);
+    };
+    fetchRecords();
+  }, []);
+
+  const getTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
   return (
     <Card variant="elevated">
       <CardContent className="p-6">
@@ -46,36 +52,46 @@ const RecentRecords = () => {
             <FileText className="w-5 h-5 text-primary" />
             Recent Records
           </h3>
-          <Link to="/upload">
+          <Link to="/medicines">
             <Button variant="ghost" size="sm" className="text-primary">
               View All <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </Link>
         </div>
 
-        <div className="space-y-4">
-          {recentRecords.map((record, index) => (
-            <motion.div
-              key={record.id}
-              className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <div className={`w-12 h-12 rounded-xl ${record.bg} flex items-center justify-center flex-shrink-0`}>
-                <record.icon className={`w-6 h-6 ${record.color}`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-foreground truncate">{record.title}</h4>
-                <p className="text-sm text-muted-foreground">{record.doctor}</p>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0">
-                <Clock className="w-4 h-4" />
-                {record.date}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : records.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No records yet. Upload a prescription to get started.</p>
+        ) : (
+          <div className="space-y-4">
+            {records.map((record, index) => (
+              <motion.div
+                key={record.id}
+                className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Pill className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-foreground truncate">{record.name} — {record.dosage}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {record.prescribed_by && record.prescribed_by !== "Not specified" ? record.prescribed_by : "Uploaded prescription"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0">
+                  <Clock className="w-4 h-4" />
+                  {getTimeAgo(record.created_at)}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         <Link to="/upload" className="block mt-6">
           <Button className="w-full" variant="outline">
