@@ -173,12 +173,37 @@ const UploadPage = () => {
     }
   };
 
-  const saveRecord = (id: string) => {
+  const saveRecord = async (id: string) => {
     const file = files.find((f) => f.id === id);
     if (file?.extractedData) {
-      // For now, just toggle off editing and show success
-      toggleEdit(id);
-      toast.success("Record saved! (Database storage coming soon)");
+      try {
+        const medicinesToInsert = file.extractedData.medicines.map((med) => ({
+          name: med.name,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          status: "active",
+          purpose: file.extractedData!.diagnosis || "",
+          prescribed_by: file.extractedData!.patientName || "Not specified",
+          additional_notes: file.extractedData!.additionalNotes || "",
+        }));
+
+        if (medicinesToInsert.length === 0) {
+          toast.error("No medicines found to save");
+          return;
+        }
+
+        const { error } = await supabase.from("medicines").insert(medicinesToInsert);
+
+        if (error) {
+          throw error;
+        }
+
+        toggleEdit(id);
+        toast.success(`${medicinesToInsert.length} medicine(s) saved successfully!`);
+      } catch (error) {
+        console.error("Error saving medicines:", error);
+        toast.error("Failed to save medicines. Please try again.");
+      }
     }
   };
 
