@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const QRIdentityCard = () => {
-  const userQRUrl = "https://medscan.ai/doctor-view/user123";
+  const userQRUrl = `${window.location.origin}/doctor-view/demo`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(userQRUrl);

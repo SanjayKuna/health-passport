@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
 const QRCodePage = () => {
-  const userQRUrl = "https://medscan.ai/doctor-view/user123";
+  const userQRUrl = `${window.location.origin}/doctor-view/demo`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(userQRUrl);
