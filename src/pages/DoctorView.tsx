@@ -27,23 +27,41 @@ interface Medicine {
 
 const DoctorView = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [profileData, setProfileData] = useState(defaultProfile);
   const [loading, setLoading] = useState(true);
 
-  const bmi = (profileData.weight / Math.pow(profileData.height / 100, 2)).toFixed(1);
-
   useEffect(() => {
-    const fetchMedicines = async () => {
-      const { data, error } = await supabase
-        .from("medicines")
-        .select("id, name, dosage, frequency, status, purpose, prescribed_by, start_date")
-        .order("created_at", { ascending: false });
+    const fetchData = async () => {
+      const [medsResult, profileResult] = await Promise.all([
+        supabase
+          .from("medicines")
+          .select("id, name, dosage, frequency, status, purpose, prescribed_by, start_date")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("patient_profiles")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .limit(1),
+      ]);
 
-      if (!error && data) {
-        setMedicines(data);
+      if (!medsResult.error && medsResult.data) {
+        setMedicines(medsResult.data);
+      }
+      if (profileResult.data && profileResult.data.length > 0) {
+        const p = profileResult.data[0];
+        setProfileData({
+          name: p.name,
+          age: p.age || 0,
+          bloodGroup: p.blood_group || "N/A",
+          height: p.height ? Number(p.height) : 0,
+          weight: p.weight ? Number(p.weight) : 0,
+          allergies: [],
+          conditions: [],
+        });
       }
       setLoading(false);
     };
-    fetchMedicines();
+    fetchData();
   }, []);
 
   const getBMIStatus = (bmi: number) => {
