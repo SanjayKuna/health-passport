@@ -9,6 +9,7 @@ import Upload from "./pages/Upload";
 import Medicines from "./pages/Medicines";
 import QRCode from "./pages/QRCode";
 import DoctorView from "./pages/DoctorView";
+import Insurance from "./pages/Insurance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/upload" element={<Upload />} />
           <Route path="/medicines" element={<Medicines />} />
           <Route path="/qr" element={<QRCode />} />
+          <Route path="/insurance" element={<Insurance />} />
           <Route path="/doctor-view/:userId" element={<DoctorView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
