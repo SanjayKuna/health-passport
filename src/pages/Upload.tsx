@@ -238,6 +238,15 @@ const UploadPage = () => {
               weight: profileInfo.weight,
             });
           }
+
+          // Save weight history entry if weight was extracted
+          if (profileInfo.weight) {
+            await supabase.from("weight_history").insert({
+              patient_name: patientName,
+              weight: profileInfo.weight,
+              recorded_date: file.extractedData.date || new Date().toISOString().slice(0, 10),
+            });
+          }
         }
 
         toggleEdit(id);
