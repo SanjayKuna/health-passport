@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_profiles: {
+        Row: {
+          age: number | null
+          blood_group: string | null
+          created_at: string
+          height: number | null
+          id: string
+          name: string
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          age?: number | null
+          blood_group?: string | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          name: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          age?: number | null
+          blood_group?: string | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          name?: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
