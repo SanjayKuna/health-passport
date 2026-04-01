@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/upload", label: "Upload" },
   { href: "/medicines", label: "Medicines" },
   { href: "/qr", label: "QR Code" },
+  { href: "/insurance", label: "Insurance" },
 ];
 
 interface NavbarProps {

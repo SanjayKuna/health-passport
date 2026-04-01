@@ -26,6 +26,7 @@ const App = () => (
           <Route path="/upload" element={<Upload />} />
           <Route path="/medicines" element={<Medicines />} />
           <Route path="/qr" element={<QRCode />} />
+          <Route path="/insurance" element={<Insurance />} />
           <Route path="/doctor-view/:userId" element={<DoctorView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
