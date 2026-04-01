@@ -4,14 +4,14 @@ import { User, Droplets, Ruler, Weight, Activity, Pill, AlertTriangle, Heart, Lo
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
-const profileData = {
-  name: "Alex Johnson",
-  age: 32,
-  bloodGroup: "O+",
-  height: 175,
-  weight: 70,
-  allergies: ["Penicillin", "Shellfish"],
-  conditions: ["Type 2 Diabetes", "Hypertension"],
+const defaultProfile = {
+  name: "Unknown",
+  age: 0,
+  bloodGroup: "N/A",
+  height: 0,
+  weight: 0,
+  allergies: [] as string[],
+  conditions: [] as string[],
 };
 
 interface Medicine {

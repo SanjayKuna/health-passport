@@ -173,6 +173,17 @@ const UploadPage = () => {
     }
   };
 
+  const parseProfileFromNotes = (notes: string) => {
+    const ageMatch = notes.match(/(\d+)\s*years?\s*old/i);
+    const heightMatch = notes.match(/(\d+\.?\d*)\s*cm/i);
+    const weightMatch = notes.match(/(\d+\.?\d*)\s*kg/i);
+    return {
+      age: ageMatch ? parseInt(ageMatch[1]) : null,
+      height: heightMatch ? parseFloat(heightMatch[1]) : null,
+      weight: weightMatch ? parseFloat(weightMatch[1]) : null,
+    };
+  };
+
   const saveRecord = async (id: string) => {
     const file = files.find((f) => f.id === id);
     if (file?.extractedData) {
@@ -193,9 +204,40 @@ const UploadPage = () => {
         }
 
         const { error } = await supabase.from("medicines").insert(medicinesToInsert);
+        if (error) throw error;
 
-        if (error) {
-          throw error;
+        // Save/update patient profile from extracted data
+        const patientName = file.extractedData.patientName;
+        const profileInfo = parseProfileFromNotes(file.extractedData.additionalNotes || "");
+        
+        if (patientName) {
+          // Check if profile exists
+          const { data: existing } = await supabase
+            .from("patient_profiles")
+            .select("id")
+            .eq("name", patientName)
+            .limit(1);
+
+          if (existing && existing.length > 0) {
+            // Update existing profile
+            const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
+            if (profileInfo.age) updateData.age = profileInfo.age;
+            if (profileInfo.height) updateData.height = profileInfo.height;
+            if (profileInfo.weight) updateData.weight = profileInfo.weight;
+            
+            await supabase
+              .from("patient_profiles")
+              .update(updateData)
+              .eq("id", existing[0].id);
+          } else {
+            // Create new profile
+            await supabase.from("patient_profiles").insert({
+              name: patientName,
+              age: profileInfo.age,
+              height: profileInfo.height,
+              weight: profileInfo.weight,
+            });
+          }
         }
 
         toggleEdit(id);
