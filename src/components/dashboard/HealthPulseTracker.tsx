@@ -1,26 +1,92 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const weightData = [
-  { month: "Jan", weight: 72 },
-  { month: "Feb", weight: 71.5 },
-  { month: "Mar", weight: 71 },
-  { month: "Apr", weight: 70.5 },
-  { month: "May", weight: 70 },
-  { month: "Jun", weight: 69.5 },
-];
+interface WeightPoint {
+  date: string;
+  weight: number;
+}
 
-const sicknessData = [
-  { month: "Jan", incidents: 2 },
-  { month: "Feb", incidents: 1 },
-  { month: "Mar", incidents: 0 },
-  { month: "Apr", incidents: 1 },
-  { month: "May", incidents: 2 },
-  { month: "Jun", incidents: 0 },
-];
+interface SicknessPoint {
+  month: string;
+  incidents: number;
+}
 
 const HealthPulseTracker = () => {
+  const [weightData, setWeightData] = useState<WeightPoint[]>([]);
+  const [sicknessData, setSicknessData] = useState<SicknessPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    // Fetch weight history
+    const { data: weights } = await supabase
+      .from("weight_history")
+      .select("weight, recorded_date")
+      .order("recorded_date", { ascending: true });
+
+    if (weights && weights.length > 0) {
+      setWeightData(
+        weights.map((w) => ({
+          date: new Date(w.recorded_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          weight: Number(w.weight),
+        }))
+      );
+    }
+
+    // Fetch medicines grouped by month for sickness incidents
+    const { data: meds } = await supabase
+      .from("medicines")
+      .select("created_at")
+      .order("created_at", { ascending: true });
+
+    if (meds && meds.length > 0) {
+      const monthMap: Record<string, number> = {};
+      meds.forEach((m) => {
+        const d = new Date(m.created_at);
+        const key = d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+        monthMap[key] = (monthMap[key] || 0) + 1;
+      });
+      setSicknessData(
+        Object.entries(monthMap).map(([month, incidents]) => ({ month, incidents }))
+      );
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel("health-pulse")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "weight_history" }, () => fetchData())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "medicines" }, () => fetchData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const weightDiff =
+    weightData.length >= 2
+      ? (weightData[weightData.length - 1].weight - weightData[0].weight).toFixed(1)
+      : null;
+
+  const totalIncidents = sicknessData.reduce((sum, d) => sum + d.incidents, 0);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <motion.div
@@ -37,32 +103,42 @@ const HealthPulseTracker = () => {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={weightData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={['dataMin - 1', 'dataMax + 1']} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 4 }}
-                    activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {weightData.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  No weight data yet. Upload records with weight info to see trends.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weightData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={['dataMin - 1', 'dataMax + 1']} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={3}
+                      dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 4 }}
+                      activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">6-month trend</span>
-              <span className="text-success font-medium">↓ 2.5 kg</span>
+              <span className="text-muted-foreground">{weightData.length} records</span>
+              {weightDiff !== null && (
+                <span className={`font-medium ${Number(weightDiff) <= 0 ? "text-success" : "text-destructive"}`}>
+                  {Number(weightDiff) > 0 ? "↑" : "↓"} {Math.abs(Number(weightDiff))} kg
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -82,25 +158,31 @@ const HealthPulseTracker = () => {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sicknessData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Bar dataKey="incidents" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {sicknessData.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  No records yet. Upload medical records to track incidents.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sicknessData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Bar dataKey="incidents" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total this year</span>
-              <span className="text-accent font-medium">6 incidents</span>
+              <span className="text-muted-foreground">Total records</span>
+              <span className="text-accent font-medium">{totalIncidents} incidents</span>
             </div>
           </CardContent>
         </Card>
