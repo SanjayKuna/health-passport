@@ -70,7 +70,7 @@ const DoctorView = () => {
     if (bmi < 30) return { label: "Overweight", color: "text-warning" };
     return { label: "Obese", color: "text-destructive" };
   };
-
+  const bmi = profileData.height > 0 ? (profileData.weight / Math.pow(profileData.height / 100, 2)).toFixed(1) : "0";
   const bmiStatus = getBMIStatus(parseFloat(bmi));
 
   return (
