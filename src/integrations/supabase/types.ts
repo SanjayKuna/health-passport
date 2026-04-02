@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      authorizations: {
+        Row: {
+          ai_generated_summary: string | null
+          clinical_justification: string | null
+          created_at: string
+          diagnosis: string | null
+          id: string
+          insurance_provider: string
+          medicine_id: string
+          patient_name: string
+          policy_check_result: string | null
+          request_date: string
+          status: string
+          submission_package: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_generated_summary?: string | null
+          clinical_justification?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          id?: string
+          insurance_provider?: string
+          medicine_id: string
+          patient_name: string
+          policy_check_result?: string | null
+          request_date?: string
+          status?: string
+          submission_package?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_generated_summary?: string | null
+          clinical_justification?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          id?: string
+          insurance_provider?: string
+          medicine_id?: string
+          patient_name?: string
+          policy_check_result?: string | null
+          request_date?: string
+          status?: string
+          submission_package?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authorizations_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicines: {
         Row: {
           additional_notes: string | null
