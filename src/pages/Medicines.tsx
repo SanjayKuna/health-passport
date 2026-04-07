@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Medicine {
   id: string;
@@ -22,20 +23,22 @@ interface Medicine {
 }
 
 const MedicinesPage = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed" | "paused">("all");
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMedicines();
-  }, []);
+    if (user) fetchMedicines();
+  }, [user]);
 
   const fetchMedicines = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("medicines")
       .select("*")
+      .eq("user_id", user!.id)
       .order("created_at", { ascending: false });
 
     if (error) {
