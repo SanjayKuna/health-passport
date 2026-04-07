@@ -97,12 +97,12 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Link to="/dashboard">
+            <Link to="/signup">
               <Button variant="hero-outline" size="xl">
                 Get Started Free
               </Button>
             </Link>
-            <Link to="/dashboard">
+            <Link to="/signup">
               <Button variant="glass" size="xl" className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20">
                 View Demo
               </Button>

@@ -34,7 +34,7 @@ const CTASection = () => {
           <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10">
             Join thousands of users who have simplified their healthcare journey with MedScan AI.
           </p>
-          <Link to="/dashboard">
+          <Link to="/signup">
             <Button variant="hero-outline" size="xl" className="group">
               Start Free Today
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
