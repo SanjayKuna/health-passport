@@ -29,6 +29,7 @@ export type Database = {
           status: string
           submission_package: Json | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           ai_generated_summary?: string | null
@@ -44,6 +45,7 @@ export type Database = {
           status?: string
           submission_package?: Json | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           ai_generated_summary?: string | null
@@ -59,6 +61,7 @@ export type Database = {
           status?: string
           submission_package?: Json | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -82,6 +85,7 @@ export type Database = {
           purpose: string | null
           start_date: string | null
           status: string
+          user_id: string | null
         }
         Insert: {
           additional_notes?: string | null
@@ -94,6 +98,7 @@ export type Database = {
           purpose?: string | null
           start_date?: string | null
           status?: string
+          user_id?: string | null
         }
         Update: {
           additional_notes?: string | null
@@ -106,6 +111,7 @@ export type Database = {
           purpose?: string | null
           start_date?: string | null
           status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -118,6 +124,7 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+          user_id: string | null
           weight: number | null
         }
         Insert: {
@@ -128,6 +135,7 @@ export type Database = {
           id?: string
           name: string
           updated_at?: string
+          user_id?: string | null
           weight?: number | null
         }
         Update: {
@@ -138,6 +146,7 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string | null
           weight?: number | null
         }
         Relationships: []
@@ -148,6 +157,7 @@ export type Database = {
           id: string
           patient_name: string
           recorded_date: string
+          user_id: string | null
           weight: number
         }
         Insert: {
@@ -155,6 +165,7 @@ export type Database = {
           id?: string
           patient_name: string
           recorded_date?: string
+          user_id?: string | null
           weight: number
         }
         Update: {
@@ -162,6 +173,7 @@ export type Database = {
           id?: string
           patient_name?: string
           recorded_date?: string
+          user_id?: string | null
           weight?: number
         }
         Relationships: []

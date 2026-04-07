@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import AuthorizationStepper, { AuthStatus } from "@/components/insurance/AuthorizationStepper";
 import AgentAnalysisCard from "@/components/insurance/AgentAnalysisCard";
 import {
@@ -41,6 +42,7 @@ interface Authorization {
 }
 
 const Insurance = () => {
+  const { user: authUser } = useAuth();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [authorizations, setAuthorizations] = useState<Authorization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,14 +52,15 @@ const Insurance = () => {
   const [expandedAuth, setExpandedAuth] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (authUser) fetchData();
+  }, [authUser]);
 
   const fetchData = async () => {
+    if (!authUser) return;
     setLoading(true);
     const [medsRes, authsRes] = await Promise.all([
-      supabase.from("medicines").select("*").order("created_at", { ascending: false }),
-      supabase.from("authorizations").select("*").order("created_at", { ascending: false }),
+      supabase.from("medicines").select("*").eq("user_id", authUser.id).order("created_at", { ascending: false }),
+      supabase.from("authorizations").select("*").eq("user_id", authUser.id).order("created_at", { ascending: false }),
     ]);
     setMedicines((medsRes.data as Medicine[]) || []);
     setAuthorizations((authsRes.data as Authorization[]) || []);
@@ -65,13 +68,13 @@ const Insurance = () => {
   };
 
   const requestAuthorization = async (medicine: Medicine) => {
+    if (!authUser) return;
     setProcessingMedId(medicine.id);
     try {
-      // Fetch patient profile for BMI/age
       const { data: profiles } = await supabase
         .from("patient_profiles")
         .select("*")
-        .order("updated_at", { ascending: false })
+        .eq("user_id", authUser.id)
         .limit(1);
 
       const profile = profiles?.[0];
@@ -100,6 +103,7 @@ const Insurance = () => {
           bmi,
           age: profile?.age?.toString(),
           additionalNotes: medicine.additional_notes || "",
+          userId: authUser!.id,
         },
       });
 

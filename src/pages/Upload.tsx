@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ExtractedData {
   patientName: string;
@@ -30,6 +31,7 @@ interface UploadedFile {
 }
 
 const UploadPage = () => {
+  const { user: authUser } = useAuth();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -186,7 +188,7 @@ const UploadPage = () => {
 
   const saveRecord = async (id: string) => {
     const file = files.find((f) => f.id === id);
-    if (file?.extractedData) {
+    if (file?.extractedData && authUser) {
       try {
         const medicinesToInsert = file.extractedData.medicines.map((med) => ({
           name: med.name,
@@ -196,6 +198,7 @@ const UploadPage = () => {
           purpose: file.extractedData!.diagnosis || "",
           prescribed_by: file.extractedData!.patientName || "Not specified",
           additional_notes: file.extractedData!.additionalNotes || "",
+          user_id: authUser.id,
         }));
 
         if (medicinesToInsert.length === 0) {
@@ -207,46 +210,28 @@ const UploadPage = () => {
         if (error) throw error;
 
         // Save/update patient profile from extracted data
-        const patientName = file.extractedData.patientName;
         const profileInfo = parseProfileFromNotes(file.extractedData.additionalNotes || "");
-        
-        if (patientName) {
-          // Check if profile exists
-          const { data: existing } = await supabase
-            .from("patient_profiles")
-            .select("id")
-            .eq("name", patientName)
-            .limit(1);
 
-          if (existing && existing.length > 0) {
-            // Update existing profile
-            const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
-            if (profileInfo.age) updateData.age = profileInfo.age;
-            if (profileInfo.height) updateData.height = profileInfo.height;
-            if (profileInfo.weight) updateData.weight = profileInfo.weight;
-            
-            await supabase
-              .from("patient_profiles")
-              .update(updateData)
-              .eq("id", existing[0].id);
-          } else {
-            // Create new profile
-            await supabase.from("patient_profiles").insert({
-              name: patientName,
-              age: profileInfo.age,
-              height: profileInfo.height,
-              weight: profileInfo.weight,
-            });
-          }
+        // Update the user's own profile
+        const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
+        if (file.extractedData.patientName) updateData.name = file.extractedData.patientName;
+        if (profileInfo.age) updateData.age = profileInfo.age;
+        if (profileInfo.height) updateData.height = profileInfo.height;
+        if (profileInfo.weight) updateData.weight = profileInfo.weight;
 
-          // Save weight history entry if weight was extracted
-          if (profileInfo.weight) {
-            await supabase.from("weight_history").insert({
-              patient_name: patientName,
-              weight: profileInfo.weight,
-              recorded_date: file.extractedData.date || new Date().toISOString().slice(0, 10),
-            });
-          }
+        await supabase
+          .from("patient_profiles")
+          .update(updateData)
+          .eq("user_id", authUser.id);
+
+        // Save weight history entry if weight was extracted
+        if (profileInfo.weight) {
+          await supabase.from("weight_history").insert({
+            patient_name: file.extractedData.patientName || authUser.user_metadata?.full_name || "User",
+            weight: profileInfo.weight,
+            recorded_date: file.extractedData.date || new Date().toISOString().slice(0, 10),
+            user_id: authUser.id,
+          });
         }
 
         toggleEdit(id);
