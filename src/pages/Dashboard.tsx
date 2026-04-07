@@ -7,6 +7,7 @@ import RecentRecords from "@/components/dashboard/RecentRecords";
 import QRIdentityCard from "@/components/dashboard/QRIdentityCard";
 import MedicineWidget from "@/components/dashboard/MedicineWidget";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 const defaultUser = {
@@ -18,14 +19,17 @@ const defaultUser = {
 };
 
 const Dashboard = () => {
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState(defaultUser);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authUser) return;
     const fetchProfile = async () => {
       const { data } = await supabase
         .from("patient_profiles")
         .select("*")
+        .eq("user_id", authUser.id)
         .order("updated_at", { ascending: false })
         .limit(1);
 
@@ -38,11 +42,16 @@ const Dashboard = () => {
           height: p.height ? Number(p.height) : 0,
           weight: p.weight ? Number(p.weight) : 0,
         });
+      } else {
+        setUser({
+          ...defaultUser,
+          name: authUser.user_metadata?.full_name || "User",
+        });
       }
       setLoading(false);
     };
     fetchProfile();
-  }, []);
+  }, [authUser]);
 
   if (loading) {
     return (
@@ -55,32 +64,18 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
       <main className="pt-24 pb-12 px-6">
         <div className="container mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back, {user.name}! 👋</h1>
             <p className="text-muted-foreground">Here's an overview of your health dashboard</p>
           </motion.div>
 
           <div className="space-y-8">
-            {/* Profile Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <ProfileCard user={user} />
             </motion.div>
-
-            {/* Health Pulse Charts */}
             <HealthPulseTracker />
-
-            {/* Bottom Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <RecentRecords />
