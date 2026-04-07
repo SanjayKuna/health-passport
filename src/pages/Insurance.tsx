@@ -103,6 +103,7 @@ const Insurance = () => {
           bmi,
           age: profile?.age?.toString(),
           additionalNotes: medicine.additional_notes || "",
+          userId: authUser!.id,
         },
       });
 
