@@ -11,7 +11,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { medicineId, patientName, diagnosis, medicines, labResults, bmi, age, additionalNotes } = await req.json();
+    const { medicineId, patientName, diagnosis, medicines, labResults, bmi, age, additionalNotes, userId } = await req.json();
 
     if (!medicineId || !patientName) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -146,9 +146,7 @@ Run all three agents (Clinical Reader, Policy Matcher, Submission) and provide t
     else if (recommendation === "LIKELY_DENIED") status = "denied";
 
     // Save to authorizations table
-    const { data: authRecord, error: dbError } = await supabase
-      .from("authorizations")
-      .insert({
+    const insertData: Record<string, unknown> = {
         medicine_id: medicineId,
         patient_name: patientName,
         status,
@@ -157,7 +155,12 @@ Run all three agents (Clinical Reader, Policy Matcher, Submission) and provide t
         ai_generated_summary: analysisData.overallSummary || "",
         policy_check_result: analysisData.policyMatcherResult?.guidelineMatch || "",
         submission_package: analysisData,
-      })
+    };
+    if (userId) insertData.user_id = userId;
+
+    const { data: authRecord, error: dbError } = await supabase
+      .from("authorizations")
+      .insert(insertData)
       .select()
       .single();
 
