@@ -10,7 +10,10 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const QRCodePage = () => {
   const { user } = useAuth();
-  const userQRUrl = `${window.location.origin}/doctor-view/${user?.id || "demo"}`;
+  const publicBase = window.location.hostname.includes("lovableproject.com") || window.location.hostname.includes("lovable.dev")
+    ? "https://my-medscan-ai.lovable.app"
+    : window.location.origin;
+  const userQRUrl = `${publicBase}/doctor-view/${user?.id || "demo"}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(userQRUrl);
