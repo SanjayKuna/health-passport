@@ -10,8 +10,14 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const QRCodePage = () => {
   const { user } = useAuth();
-  const publicBase = window.location.hostname.includes("lovableproject.com") || window.location.hostname.includes("lovable.dev")
-    ? "https://my-medscan-ai.lovable.app"
+  const publishedBase = "https://my-medscan-ai.lovable.app";
+  const isLovablePreview = window.location.hostname !== "my-medscan-ai.lovable.app" && (
+    window.location.hostname.includes("lovable.app") ||
+    window.location.hostname.includes("lovableproject.com") ||
+    window.location.hostname.includes("lovable.dev")
+  );
+  const publicBase = isLovablePreview
+    ? publishedBase
     : window.location.origin;
   const userQRUrl = `${publicBase}/doctor-view/${user?.id || "demo"}`;
 
